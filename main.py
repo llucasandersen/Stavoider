@@ -1,5 +1,6 @@
 import turtle
 import random
+import time
 
 wn = turtle.Screen()
 wn.bgcolor("black")
@@ -12,7 +13,7 @@ def setup_border():
     border_pen.speed(0)
     border_pen.color("white")
     border_pen.penup()
-    border_pen.setposition(-290, 290)
+    border_pen.setposition(-300, -290)
     border_pen.pendown()
     border_pen.pensize(3)
     for side in range(4):
@@ -68,6 +69,7 @@ def draw_button(text, x, y, color="grey"):
     button.write(text, align="center", font=("Arial", 16, "normal"))
     return button
 
+
 def clear_screen():
     for turtle in wn.turtles():
         turtle.hideturtle()
@@ -95,9 +97,24 @@ def main_menu():
             setup_key_bindings(player)
             sprites = setup_sprites(number_of_sprites=70)
             wn.bgcolor("black")
+            countdown()  # Initiate countdown before the game starts
             game_loop(player, sprites)
 
     wn.onscreenclick(on_click)
+
+
+def countdown():
+    countdown_turtle = turtle.Turtle()
+    countdown_turtle.hideturtle()
+    countdown_turtle.color("white")
+    countdown_turtle.penup()
+    countdown_turtle.goto(0, 0)
+    for i in range(3, 0, -1):
+        countdown_turtle.clear()
+        countdown_turtle.write(f"{i}...", align="center", font=("Arial", 40, "bold"))
+        wn.update()
+        time.sleep(1)
+    countdown_turtle.clear()
 
 
 def game_loop(player, sprites):
@@ -107,17 +124,18 @@ def game_loop(player, sprites):
         wn.update()
         for sprite in sprites:
             x = sprite.xcor()
-            x += 2
+            x += (1.5 + (score / 30))
             sprite.setx(x)
             if sprite.xcor() > 290:
                 y = sprite.ycor()
                 y = random.randint(-290, 290)
                 sprite.sety(y)
                 sprite.setx(-290)
-            if player.distance(sprite) < 20:
+            if player.distance(sprite) < 15:
                 end_game(score)
                 e = False
         score += 0.01
+
 
 def setup_key_bindings(player):
     wn.listen()
@@ -126,12 +144,14 @@ def setup_key_bindings(player):
     wn.onkey(lambda: move_up(player), "w")
     wn.onkey(lambda: move_down(player), "s")
 
+
 def move_left(player):
     x = player.xcor()
     x -= 15
     if x < -280:
         x = -280
     player.setx(x)
+
 
 def move_right(player):
     x = player.xcor()
@@ -140,12 +160,14 @@ def move_right(player):
         x = 280
     player.setx(x)
 
+
 def move_up(player):
     y = player.ycor()
     y += 15
     if y > 280:
         y = 280
     player.sety(y)
+
 
 def move_down(player):
     y = player.ycor()
@@ -168,15 +190,18 @@ def end_game(score):
     play_again_button = draw_button("Play Again", -50, -25, "grey")
     wn.onscreenclick(lambda x, y: restart_game(x, y, play_again_button))
 
+
 def restart_game(x, y, play_again_button):
     if -50 <= x <= 50 and -25 <= y <= 25:
         play_again_button.clear()
         wn.onscreenclick(None)
         main_menu()
 
+
 def main():
     main_menu()
     wn.update()
+
 
 main()
 wn.mainloop()
