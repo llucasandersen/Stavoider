@@ -9,7 +9,7 @@ pygame.init()
 pygame.mixer.init()
 
 countdown_sound = pygame.mixer.Sound("audios/countdown.mp3")
-gameover_sound = pygame.mixer.Sound("audios/gameover.wav")
+gameover_sound = pygame.mixer.Sound("audios/gameover.mp3")
 minigame_sound = pygame.mixer.Sound("audios/minigame.mp3")
 move_sound = pygame.mixer.Sound("audios/Move.mp3")
 youwin_sound = pygame.mixer.Sound("audios/youwin.mp3")
