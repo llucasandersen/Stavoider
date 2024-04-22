@@ -2,6 +2,17 @@ import turtle
 import random
 import time
 import google.generativeai as genai
+import pygame
+
+is_game_active = True
+pygame.init()
+pygame.mixer.init()
+
+countdown_sound = pygame.mixer.Sound("audios/countdown.mp3")
+gameover_sound = pygame.mixer.Sound("audios/gameover.wav")
+minigame_sound = pygame.mixer.Sound("audios/minigame.mp3")
+move_sound = pygame.mixer.Sound("audios/Move.mp3")
+youwin_sound = pygame.mixer.Sound("audios/youwin.mp3")
 
 # Configure the Google Gemini AI
 genai.configure(api_key="AIzaSyCJTc3g3cFaS3Vr16xfiuHnXC6XzPdwnW0")
@@ -128,7 +139,10 @@ def main_menu():
     def on_click(x, y):
         if -50 <= x <= 50:
             if -25 <= y <= 25:
+                global is_game_active
+                is_game_active = True
                 score = 0
+                slowdownscore = 0
                 wn.onscreenclick(None)
                 clear_screen()
                 wn.tracer(0)
@@ -138,7 +152,7 @@ def main_menu():
                 sprites = setup_sprites(player, number_of_sprites=75, include_minigame_sprite=True)
                 wn.bgcolor("black")
                 countdown()  # Initiate countdown before the game starts
-                game_loop(player, sprites, score)
+                game_loop(player, sprites, score, slowdownscore)
             elif -100 <= y <= -50:
                 close_game()
 
@@ -146,6 +160,7 @@ def main_menu():
 
 
 def countdown():
+    countdown_sound.play()
     countdown_turtle = turtle.Turtle()
     countdown_turtle.hideturtle()
     countdown_turtle.color("white")
@@ -159,14 +174,14 @@ def countdown():
     countdown_turtle.clear()
 
 
-def game_loop(player, sprites, score):
-    e = True
+def game_loop(player, sprites, score, slowdownscore):
+    global is_game_active
     minigame_sprite = sprites[-1]  # Assume the last sprite is the minigame trigger
-    while e:
+    while is_game_active:
         wn.update()
         for sprite in sprites[:-1]:  # All sprites except the minigame trigger
             x = sprite.xcor()
-            x += (1.5 + (score / 30))
+            x += (1.5 + (score / 30) - slowdownscore)
             sprite.setx(x)
             if sprite.xcor() > 290:
                 y = sprite.ycor()
@@ -174,13 +189,20 @@ def game_loop(player, sprites, score):
                 sprite.sety(y)
                 sprite.setx(-290)
             if player.distance(sprite) < 15:
+                gameover_sound.play()
                 player.goto(400, 400)
-                end_game(score)
-                e = False
+                minigame_sprite.goto(-400, -400)
+                if is_game_active:  # Ensure the game didn't exit during the delay
+                    wn.clear()
+                    end_game(score, sprites)
+                running = False
+
         # Check for collision with the minigame sprite
-        if player.distance(minigame_sprite) < 15:
-            trigger_minigame(player, score, sprites, e)
+        if player.distance(minigame_sprite) < 15 and is_game_active:  # Ensure game is still running
+            minigame_sound.play()
+            trigger_minigame(player, score, sprites, slowdownscore)
         score += 0.01
+
 
 def wrap_text(text, wrap_length):
     """Wrap text to the specified length."""
@@ -197,9 +219,13 @@ def wrap_text(text, wrap_length):
     return wrapped_text
 
 
-def trigger_minigame(player, score, sprites, e):
-    if e == False:
-        end_game(score)
+import time
+
+
+def trigger_minigame(player, score, sprites, slowdownscore):
+    global is_game_active
+    if not is_game_active:
+        end_game(score, sprites)
     else:
         number_of_sprites = len(sprites)
         print(f"score: {score}")
@@ -213,7 +239,7 @@ def trigger_minigame(player, score, sprites, e):
         minigame_turtle.hideturtle()
         minigame_turtle.color("white")
         minigame_turtle.penup()
-        minigame_turtle.goto(0, 150)
+        minigame_turtle.goto(0, 180)
         minigame_turtle.write("Typing Mini-Game!", align="center", font=("Arial", 24, "bold"))
 
         prompt = f"Generate a creative sentence about dodging that is roughly {int(score)} words long."
@@ -222,26 +248,36 @@ def trigger_minigame(player, score, sprites, e):
             prompt_parts = [{"text": prompt}]
             response = model.generate_content(prompt_parts)
             challenge_sentence = response.text.strip().lower()  # Normalize the text for comparison
+            challenge_sentenceshow = response.text
         except Exception as ex:
-            challenge_sentence = "dodge the hurdles swiftly!"  # Fallback sentence
+            challenge_sentenceshow = "dodge the hurdles swiftly!"  # Fallback sentence
+            challenge_sentence = "dodge the hurdles swiftly!"
 
-        wrapped_sentence = wrap_text(challenge_sentence, 40)  # Wrap text to fit the screen
+        word_count = len(challenge_sentence.split()) * 2.2  # Count the words
         minigame_turtle.goto(0, 50)
+        wrapped_sentence = wrap_text(challenge_sentenceshow, 40)
         minigame_turtle.write(wrapped_sentence, align="center", font=("Arial", 18, "normal"))
         wn.update()  # Update the screen to show the mini-game prompt
 
-        user_input = wn.textinput("Mini-Game", "Type the sentence exactly as shown above:").strip().lower()
-        if user_input == challenge_sentence:
-            minigame_turtle.goto(0, 30)
+        start_time = time.time()  # Record the time at which input starts
+        user_input = wn.textinput("Mini-Game",
+                                  f"Type the sentence exactly as shown above (Time: {word_count} seconds):").strip().lower()
+        elapsed_time = time.time() - start_time
+
+        if user_input == challenge_sentence and elapsed_time <= word_count:
+            minigame_turtle.goto(0, 20)
             score += 5
+            slowdownscore += score / 100
             number_of_sprites -= max(6, int(0.1 * number_of_sprites))
-            minigame_turtle.write(f"+5 Score. Only {number_of_sprites} asteroids remain.", align="center",
+            minigame_turtle.write(f"+5 Score. Only {number_of_sprites} asteroids remain. Good timing!", align="center",
                                   font=("Arial", 18, "normal"))
-            time.sleep(3)
+            time.sleep(2)
         else:
+            print(elapsed_time)
             minigame_turtle.goto(0, 30)
-            minigame_turtle.write(f"Incorrect", align="center", font=("Arial", 18, "normal"))
+            minigame_turtle.write(f"Incorrect or too slow!", align="center", font=("Arial", 18, "normal"))
             time.sleep(1)
+
         # Clean up mini-game elements
         minigame_turtle.clear()
         minigame_turtle.hideturtle()
@@ -256,7 +292,7 @@ def trigger_minigame(player, score, sprites, e):
         sprites = setup_sprites(player, number_of_sprites=number_of_sprites, include_minigame_sprite=True)
         wn.bgcolor("black")
         countdown()  # Initiate countdown before the game starts
-        game_loop(player, sprites, score)
+        game_loop(player, sprites, score, slowdownscore)
 
 
 def setup_key_bindings(player):
@@ -276,6 +312,7 @@ def move_left(player):
     x -= 15
     if x < -280:
         x = -280
+    move_sound.play()
     player.setx(x)
 
 
@@ -284,6 +321,7 @@ def move_right(player):
     x += 15
     if x > 280:
         x = 280
+    move_sound.play()
     player.setx(x)
 
 
@@ -292,6 +330,7 @@ def move_up(player):
     y += 15
     if y > 280:
         y = 280
+    move_sound.play()
     player.sety(y)
 
 
@@ -300,10 +339,14 @@ def move_down(player):
     y -= 15
     if y < -280:
         y = -280
+    move_sound.play()
     player.sety(y)
 
 
-def end_game(score):
+def end_game(score, sprites):
+    global is_game_active
+    is_game_active = False
+    sprites = len(sprites)
     clear_screen()
     setup_border()
     wn.bgcolor("black")
@@ -312,20 +355,24 @@ def end_game(score):
     score_display.color("white")
     score_display.penup()
     score_display.goto(0, 100)
-
-    # Determine score message
-    if score <= 8:
-        message = "You weren't even trying."
-    elif score <= 11:
-        message = "Okay, that's a solid score."
-    elif score <= 18:
-        message = "You're pretty good at this game."
-    elif score <= 25:
-        message = "You were made for this game."
+    if sprites == 0:
+        youwin_sound.play()
+        score_display.goto(0, 130)
+        score_display.write("You Won", align="center", font=("Arial", 30, "normal"))
     else:
-        message = "No one is better than you. That's a crazy score."
+        # Determine score message
+        if score <= 9:
+            message = "You weren't even trying."
+        elif score <= 19:
+            message = "Okay, that's a solid score."
+        elif score <= 25:
+            message = "You're pretty good at this game."
+        elif score <= 47:
+            message = "You were made for this game."
+        else:
+            message = "No one is better than you. That's a crazy score."
+        score_display.write(message, align="center", font=("Arial", 18, "normal"))
 
-    score_display.write(message, align="center", font=("Arial", 18, "normal"))
     score_display.goto(0, 50)
     score_display.write(f"Score: {int(score)}", align="center", font=("Arial", 24, "normal"))
     play_again_button = draw_button("Play Again", -50, -25, "grey")
