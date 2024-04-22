@@ -136,6 +136,25 @@ def main_menu():
     play_button = draw_button("Play", -50, -25)
     exit_button = draw_button("Exit", -50, -100)
 
+    def playonenter():
+        global is_game_active
+        is_game_active = True
+        score = 0
+        slowdownscore = 0
+        wn.onscreenclick(None)
+        clear_screen()
+        wn.tracer(0)
+        setup_border()
+        player = setup_player()
+        setup_key_bindings(player)
+        sprites = setup_sprites(player, number_of_sprites=75, include_minigame_sprite=True)
+        wn.bgcolor("black")
+        countdown()  # Initiate countdown before the game starts
+        game_loop(player, sprites, score, slowdownscore)
+
+    wn.listen()
+    wn.onkey(lambda: playonenter(), "Return")
+
     def on_click(x, y):
         if -50 <= x <= 50:
             if -25 <= y <= 25:
@@ -239,7 +258,7 @@ def trigger_minigame(player, score, sprites, slowdownscore):
         minigame_turtle.hideturtle()
         minigame_turtle.color("white")
         minigame_turtle.penup()
-        minigame_turtle.goto(0, 180)
+        minigame_turtle.goto(0, 190)
         minigame_turtle.write("Typing Mini-Game!", align="center", font=("Arial", 24, "bold"))
 
         prompt = f"Generate a creative sentence about dodging that is roughly {int(score)} words long."
@@ -253,10 +272,10 @@ def trigger_minigame(player, score, sprites, slowdownscore):
             challenge_sentenceshow = "dodge the hurdles swiftly!"  # Fallback sentence
             challenge_sentence = "dodge the hurdles swiftly!"
 
-        word_count = len(challenge_sentence.split()) * 2.2  # Count the words
+        word_count = len(challenge_sentence.split()) * 2.4  # Count the words
         minigame_turtle.goto(0, 50)
         wrapped_sentence = wrap_text(challenge_sentenceshow, 40)
-        minigame_turtle.write(wrapped_sentence, align="center", font=("Arial", 18, "normal"))
+        minigame_turtle.write(wrapped_sentence, align="center", font=("Arial", 12, "normal"))
         wn.update()  # Update the screen to show the mini-game prompt
 
         start_time = time.time()  # Record the time at which input starts
@@ -267,7 +286,7 @@ def trigger_minigame(player, score, sprites, slowdownscore):
         if user_input == challenge_sentence and elapsed_time <= word_count:
             minigame_turtle.goto(0, 20)
             score += 5
-            slowdownscore += score / 100
+            slowdownscore += score / 50
             number_of_sprites -= max(6, int(0.1 * number_of_sprites))
             minigame_turtle.write(f"+5 Score. Only {number_of_sprites} asteroids remain. Good timing!", align="center",
                                   font=("Arial", 18, "normal"))
@@ -343,6 +362,7 @@ def move_down(player):
     player.sety(y)
 
 
+
 def end_game(score, sprites):
     global is_game_active
     is_game_active = False
@@ -377,6 +397,14 @@ def end_game(score, sprites):
     score_display.write(f"Score: {int(score)}", align="center", font=("Arial", 24, "normal"))
     play_again_button = draw_button("Play Again", -50, -25, "grey")
     exit_button = draw_button("Exit", -50, -100)
+
+    def tryagain():
+        play_again_button.clear()
+        wn.onscreenclick(None)
+        main_menu()
+
+    wn.listen()
+    wn.onkey(lambda: tryagain(), "Return")
 
     def on_click(x, y):
         if -50 <= x <= 50:
