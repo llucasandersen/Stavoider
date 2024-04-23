@@ -5,6 +5,7 @@ import google.generativeai as genai
 import pygame
 
 is_game_active = True
+playernew = True
 pygame.init()
 pygame.mixer.init()
 
@@ -136,9 +137,37 @@ def main_menu():
     play_button = draw_button("Play", -50, -25)
     exit_button = draw_button("Exit", -50, -100)
 
-    def playonenter():
-        global is_game_active
-        is_game_active = True
+    def tutorial():
+        global playernew
+        clear_screen()
+        wn.bgcolor("black")
+        tutorial_turtle = turtle.Turtle()
+        tutorial_turtle.hideturtle()
+        tutorial_turtle.color("white")
+        tutorial_turtle.penup()
+        tutorial_turtle.goto(0, 150)
+        tutorial_turtle.write("Welcome to Stavoider!", align="center", font=("Arial", 24, "bold"))
+        tutorial_turtle.goto(0, 100)
+        tutorial_turtle.write("You are a spaceship trying to avoid asteroids.", align="center",
+                              font=("Arial", 16, "normal"))
+        tutorial_turtle.goto(0, 50)
+        tutorial_turtle.write("Collect green asteroids to destroy other asteroids.", align="center",
+                              font=("Arial", 16, "normal"))
+        tutorial_turtle.goto(0, 0)
+        tutorial_turtle.write("Use WASD or Arrow Keys to move:", align="center", font=("Arial", 16, "normal"))
+        tutorial_turtle.goto(0, -50)
+        tutorial_turtle.write("W or Up Arrow: Move Up", align="center", font=("Arial", 16, "normal"))
+        tutorial_turtle.goto(0, -100)
+        tutorial_turtle.write("A or Left Arrow: Move Left", align="center", font=("Arial", 16, "normal"))
+        tutorial_turtle.goto(0, -150)
+        tutorial_turtle.write("S or Down Arrow: Move Down", align="center", font=("Arial", 16, "normal"))
+        tutorial_turtle.goto(0, -200)
+        tutorial_turtle.write("D or Right Arrow: Move Right", align="center", font=("Arial", 16, "normal"))
+
+        # Allow some time to read the tutorial
+        wn.update()
+        time.sleep(8)
+        playernew = False
         score = 0
         slowdownscore = 0
         wn.onscreenclick(None)
@@ -152,6 +181,31 @@ def main_menu():
         countdown()  # Initiate countdown before the game starts
         game_loop(player, sprites, score, slowdownscore)
 
+
+
+
+    def playonenter():
+        global is_game_active
+        global playernew
+        is_game_active = True
+
+        if playernew == True:
+            tutorial()
+            playernew = False
+        else:
+            score = 0
+            slowdownscore = 0
+            wn.onscreenclick(None)
+            clear_screen()
+            wn.tracer(0)
+            setup_border()
+            player = setup_player()
+            setup_key_bindings(player)
+            sprites = setup_sprites(player, number_of_sprites=75, include_minigame_sprite=True)
+            wn.bgcolor("black")
+            countdown()  # Initiate countdown before the game starts
+            game_loop(player, sprites, score, slowdownscore)
+
     wn.listen()
     wn.onkey(lambda: playonenter(), "Return")
 
@@ -160,22 +214,30 @@ def main_menu():
             if -25 <= y <= 25:
                 global is_game_active
                 is_game_active = True
-                score = 0
-                slowdownscore = 0
-                wn.onscreenclick(None)
-                clear_screen()
-                wn.tracer(0)
-                setup_border()
-                player = setup_player()
-                setup_key_bindings(player)
-                sprites = setup_sprites(player, number_of_sprites=75, include_minigame_sprite=True)
-                wn.bgcolor("black")
-                countdown()  # Initiate countdown before the game starts
-                game_loop(player, sprites, score, slowdownscore)
+                global playernew
+                is_game_active = True
+
+                if playernew == True:
+                    tutorial()
+                    playernew = False
+                else:
+                    score = 0
+                    slowdownscore = 0
+                    wn.onscreenclick(None)
+                    clear_screen()
+                    wn.tracer(0)
+                    setup_border()
+                    player = setup_player()
+                    setup_key_bindings(player)
+                    sprites = setup_sprites(player, number_of_sprites=75, include_minigame_sprite=True)
+                    wn.bgcolor("black")
+                    countdown()  # Initiate countdown before the game starts
+                    game_loop(player, sprites, score, slowdownscore)
             elif -100 <= y <= -50:
                 close_game()
 
     wn.onscreenclick(on_click)
+
 
 
 def countdown():
@@ -196,8 +258,18 @@ def countdown():
 def game_loop(player, sprites, score, slowdownscore):
     global is_game_active
     minigame_sprite = sprites[-1]  # Assume the last sprite is the minigame trigger
+    minigame_move_timer = time.time()  # To track when to move the minigame_sprite
+
     while is_game_active:
         wn.update()
+        # Move minigame_sprite every second
+
+        if minigame_sprite.xcor() > 290:  # Check if it's beyond the right boundary
+            minigame_sprite.setx(-290)  # Teleport to the left side
+        x = minigame_sprite.xcor()
+        x += (1)
+        minigame_sprite.setx(x)
+
         for sprite in sprites[:-1]:  # All sprites except the minigame trigger
             x = sprite.xcor()
             x += (1.5 + (score / 30) - slowdownscore)
@@ -215,7 +287,6 @@ def game_loop(player, sprites, score, slowdownscore):
                     wn.clear()
                     end_game(score, sprites)
                 running = False
-
         # Check for collision with the minigame sprite
         if player.distance(minigame_sprite) < 15 and is_game_active:  # Ensure game is still running
             minigame_sound.play()
