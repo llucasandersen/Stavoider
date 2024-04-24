@@ -4,12 +4,14 @@ import time
 import google.generativeai as genai
 import pygame
 
+# Initialization of the game and the necessary modules.
 is_game_active = True
 playernew = True
 newtomini = True
 pygame.init()
 pygame.mixer.init()
 
+# Loading sound effects for the game.
 countdown_sound = pygame.mixer.Sound("audios/countdown.mp3")
 gameover_sound = pygame.mixer.Sound("audios/gameover.mp3")
 minigame_sound = pygame.mixer.Sound("audios/minigame.mp3")
@@ -17,35 +19,39 @@ move_sound = pygame.mixer.Sound("audios/Move.mp3")
 youwin_sound = pygame.mixer.Sound("audios/youwin.mp3")
 background = pygame.mixer.Sound("audios/backroundnoise.mp3")
 
-# Configure the Google Gemini AI
+# Configuration for the Google Gemini AI API.
 genai.configure(api_key="AIzaSyCJTc3g3cFaS3Vr16xfiuHnXC6XzPdwnW0")
 
-# Set up the model configuration
+# Define the model generation configuration and safety settings.
 generation_config = {
     "temperature": 1,
     "top_p": 0.95,
     "top_k": 0,
-    "max_output_tokens": 8192,
+    "max_output_tokens": 8192
 }
 
 safety_settings = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"}
 ]
 
+# Initialize the model with specified settings.
 model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest",
                               generation_config=generation_config,
                               safety_settings=safety_settings)
 
+# Setup for the main game screen.
 wn = turtle.Screen()
 wn.bgcolor("black")
 wn.setup(600, 600)
 wn.title("Stavoider")
 
-
 def setup_border():
+    """
+    Draws a border around the game screen.
+    """
     border_pen = turtle.Turtle()
     border_pen.speed(0)
     border_pen.color("white")
@@ -58,8 +64,11 @@ def setup_border():
         border_pen.lt(90)
     border_pen.hideturtle()
 
-
 def setup_player():
+    """
+    Creates and positions the player in the game.
+    Returns a Turtle object representing the player.
+    """
     player = turtle.Turtle()
     player.color("purple")
     player.shape("triangle")
@@ -69,8 +78,11 @@ def setup_player():
     player.setheading(-90)
     return player
 
-
 def setup_sprites(player, number_of_sprites, buffer=50, include_minigame_sprite=False):
+    """
+    Generates sprites for the game, avoiding placement too close to the player.
+    Returns a list of Turtle objects representing the sprites.
+    """
     sprites = []
     while len(sprites) < number_of_sprites:
         sprite = turtle.Turtle()
@@ -98,8 +110,11 @@ def setup_sprites(player, number_of_sprites, buffer=50, include_minigame_sprite=
         sprites.append(minigame_sprite)
     return sprites
 
-
 def draw_button(text, x, y, color="grey"):
+    """
+    Draws a button with specified text and position.
+    Returns a Turtle object that represents the button.
+    """
     button = turtle.Turtle()
     button.hideturtle()
     button.speed(0)
@@ -118,14 +133,18 @@ def draw_button(text, x, y, color="grey"):
     button.write(text, align="center", font=("Arial", 16, "normal"))
     return button
 
-
 def clear_screen():
+    """
+    Clears all turtles from the screen.
+    """
     for turtle in wn.turtles():
         turtle.hideturtle()
     wn.clear()
 
-
 def main_menu():
+    """
+    Displays the main menu of the game.
+    """
     clear_screen()
     wn.bgcolor("black")
     title_turtle = turtle.Turtle()
@@ -140,6 +159,9 @@ def main_menu():
     exit_button = draw_button("Exit", -50, -100)
 
     def tutorial():
+        """
+        Displays the tutorial for the game.
+        """
         global playernew
         clear_screen()
         background.play()
@@ -184,20 +206,19 @@ def main_menu():
         countdown()  # Initiate countdown before the game starts
         game_loop(player, sprites, score, slowdownscore)
 
-
-
     def playonenter():
-        global is_game_active
-        global playernew
+        """
+        Initiates the game or tutorial when the player selects the play option.
+        """
+        global is_game_active, playernew
         is_game_active = True
-
-        if playernew == True:
-            tutorial()
+        if playernew:
             playernew = False
+            tutorial()
         else:
             score = 0
             slowdownscore = 0
-            wn.onscreenclick(   None)
+            wn.onscreenclick(None)
             clear_screen()
             wn.tracer(0)
             setup_border()
@@ -209,19 +230,18 @@ def main_menu():
             game_loop(player, sprites, score, slowdownscore)
 
     wn.listen()
-    wn.onkey(lambda: playonenter(), "Return")
+    wn.onkey(playonenter, "Return")
 
     def on_click(x, y):
+        """
+        Handles mouse clicks on the play and exit buttons.
+        """
         if -50 <= x <= 50:
             if -25 <= y <= 25:
-                global is_game_active
+                global is_game_active, playernew
                 is_game_active = True
-                global playernew
-                is_game_active = True
-
-                if playernew == True:
+                if playernew:
                     tutorial()
-                    playernew = False
                 else:
                     score = 0
                     slowdownscore = 0
@@ -240,9 +260,10 @@ def main_menu():
 
     wn.onscreenclick(on_click)
 
-
-
 def countdown():
+    """
+    Plays a countdown sound and displays countdown from 3 to 1.
+    """
     countdown_sound.play()
     countdown_turtle = turtle.Turtle()
     countdown_turtle.hideturtle()
@@ -256,9 +277,10 @@ def countdown():
         time.sleep(1)
     countdown_turtle.clear()
 
-
 def tutorialmini(player, score, sprites, slowdownscore):
-    global playernew
+    """
+    Displays the tutorial for the mini-game.
+    """
     global newtomini
     newtomini = False
     clear_screen()
@@ -290,10 +312,11 @@ def tutorialmini(player, score, sprites, slowdownscore):
     time.sleep(9)
     trigger_minigame(player, score, sprites, slowdownscore)
 
-
 def game_loop(player, sprites, score, slowdownscore):
-    global is_game_active
-    global newtomini
+    """
+    Main game loop that continuously updates and checks for game events.
+    """
+    global is_game_active, newtomini
     minigame_sprite = sprites[-1]  # Assume the last sprite is the minigame trigger
     minigame_move_timer = time.time()  # To track when to move the minigame_sprite
 
@@ -304,12 +327,12 @@ def game_loop(player, sprites, score, slowdownscore):
         if minigame_sprite.xcor() > 290:  # Check if it's beyond the right boundary
             minigame_sprite.setx(-290)  # Teleport to the left side
         x = minigame_sprite.xcor()
-        x += (1)
+        x += 1
         minigame_sprite.setx(x)
 
         for sprite in sprites[:-1]:  # All sprites except the minigame trigger
             x = sprite.xcor()
-            x += (1.5 + (score / 30) - slowdownscore)
+            x += 1.5 + (score / 30) - slowdownscore
             sprite.setx(x)
             if sprite.xcor() > 290:
                 y = sprite.ycor()
@@ -334,9 +357,10 @@ def game_loop(player, sprites, score, slowdownscore):
                 trigger_minigame(player, score, sprites, slowdownscore)
         score += 0.01
 
-
 def wrap_text(text, wrap_length):
-    """Wrap text to the specified length."""
+    """
+    Wraps text to the specified length.
+    """
     words = text.split()
     wrapped_text = ""
     line = ""
@@ -349,11 +373,10 @@ def wrap_text(text, wrap_length):
     wrapped_text += line.strip()
     return wrapped_text
 
-
-import time
-
-
 def trigger_minigame(player, score, sprites, slowdownscore):
+    """
+    Trigger the typing mini-game when the player collides with the minigame sprite.
+    """
     global is_game_active
     if not is_game_active:
         end_game(score, sprites)
@@ -410,12 +433,12 @@ def trigger_minigame(player, score, sprites, slowdownscore):
             time.sleep(2)
         else:
             print(elapsed_time)
-            minigame_turtle.goto(0, 25)
+            minigame_turtle.goto(0, 20)
             if user_input != challenge_sentence:
                 minigame_turtle.write(f"Incorrect.", align="center", font=("Arial", 18, "normal"))
             else:
                 minigame_turtle.write(f"Too slow.", align="center", font=("Arial", 18, "normal"))
-                minigame_turtle.goto(0, 12)
+                minigame_turtle.goto(0, 0)
                 minigame_turtle.write(f"Took {elapsed_time:.2f} seconds and had {word_count} seconds.", align="center", font=("Arial", 18, "normal"))
 
 
@@ -437,8 +460,10 @@ def trigger_minigame(player, score, sprites, slowdownscore):
         countdown()  # Initiate countdown before the game starts
         game_loop(player, sprites, score, slowdownscore)
 
-
 def setup_key_bindings(player):
+    """
+    Sets up the key bindings for player movement.
+    """
     wn.listen()
     wn.onkey(lambda: move_left(player), "Left")
     wn.onkey(lambda: move_right(player), "Right")
@@ -449,8 +474,10 @@ def setup_key_bindings(player):
     wn.onkey(lambda: move_up(player), "w")
     wn.onkey(lambda: move_down(player), "s")
 
-
 def move_left(player):
+    """
+    Moves the player left when the corresponding key is pressed.
+    """
     x = player.xcor()
     x -= 15
     if x < -280:
@@ -458,8 +485,10 @@ def move_left(player):
     move_sound.play()
     player.setx(x)
 
-
 def move_right(player):
+    """
+    Moves the player right when the corresponding key is pressed.
+    """
     x = player.xcor()
     x += 15
     if x > 280:
@@ -467,8 +496,10 @@ def move_right(player):
     move_sound.play()
     player.setx(x)
 
-
 def move_up(player):
+    """
+    Moves the player up when the corresponding key is pressed.
+    """
     y = player.ycor()
     y += 15
     if y > 280:
@@ -476,8 +507,10 @@ def move_up(player):
     move_sound.play()
     player.sety(y)
 
-
 def move_down(player):
+    """
+    Moves the player down when the corresponding key is pressed.
+    """
     y = player.ycor()
     y -= 15
     if y < -280:
@@ -485,9 +518,10 @@ def move_down(player):
     move_sound.play()
     player.sety(y)
 
-
-
 def end_game(score, sprites):
+    """
+    Handles game termination and displays the final score.
+    """
     global is_game_active
     is_game_active = False
     sprites = len(sprites)
@@ -523,14 +557,20 @@ def end_game(score, sprites):
     exit_button = draw_button("Exit", -50, -100)
 
     def tryagain():
+        """
+        Resets the game when the play again button is clicked.
+        """
         play_again_button.clear()
         wn.onscreenclick(None)
         main_menu()
 
     wn.listen()
-    wn.onkey(lambda: tryagain(), "Return")
+    wn.onkey(tryagain, "Return")
 
     def on_click(x, y):
+        """
+        Handles clicks on the play again or exit buttons.
+        """
         if -50 <= x <= 50:
             if -25 <= y <= 25:
                 play_again_button.clear()
@@ -541,15 +581,18 @@ def end_game(score, sprites):
 
     wn.onscreenclick(on_click)
 
-
 def close_game():
+    """
+    Closes the game window.
+    """
     wn.bye()
 
-
 def main():
+    """
+    Main entry point of the program. Calls the main menu.
+    """
     main_menu()
     wn.update()
-
 
 main()
 wn.mainloop()
