@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('audios/gameover.mp3', 'audio/'), ('audios/countdown.mp3', 'audio/'), ('audios/minigame.mp3', 'audio/'), ('audios/Move.mp3', 'audio/'), ('audios/youwin.mp3', 'audio/')],
+    datas=[('audios/gameover.mp3', 'audio/'), ('audios/countdown.mp3', 'audio/'), ('audios/minigame.mp3', 'audio/'), ('audios/Move.mp3', 'audio/'), ('audios/youwin.mp3', 'audio/'), ('audios/backroundnoise.mp3', 'audio/')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
