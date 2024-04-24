@@ -6,6 +6,7 @@ import pygame
 
 is_game_active = True
 playernew = True
+newtomini = True
 pygame.init()
 pygame.mixer.init()
 
@@ -14,6 +15,7 @@ gameover_sound = pygame.mixer.Sound("audios/gameover.mp3")
 minigame_sound = pygame.mixer.Sound("audios/minigame.mp3")
 move_sound = pygame.mixer.Sound("audios/Move.mp3")
 youwin_sound = pygame.mixer.Sound("audios/youwin.mp3")
+background = pygame.mixer.Sound("audios/backroundnoise.mp3")
 
 # Configure the Google Gemini AI
 genai.configure(api_key="AIzaSyCJTc3g3cFaS3Vr16xfiuHnXC6XzPdwnW0")
@@ -140,6 +142,7 @@ def main_menu():
     def tutorial():
         global playernew
         clear_screen()
+        background.play()
         wn.bgcolor("black")
         tutorial_turtle = turtle.Turtle()
         tutorial_turtle.hideturtle()
@@ -166,7 +169,7 @@ def main_menu():
 
         # Allow some time to read the tutorial
         wn.update()
-        time.sleep(8)
+        time.sleep(9)
         playernew = False
         score = 0
         slowdownscore = 0
@@ -183,7 +186,6 @@ def main_menu():
 
 
 
-
     def playonenter():
         global is_game_active
         global playernew
@@ -195,7 +197,7 @@ def main_menu():
         else:
             score = 0
             slowdownscore = 0
-            wn.onscreenclick(None)
+            wn.onscreenclick(   None)
             clear_screen()
             wn.tracer(0)
             setup_border()
@@ -255,8 +257,43 @@ def countdown():
     countdown_turtle.clear()
 
 
+def tutorialmini(player, score, sprites, slowdownscore):
+    global playernew
+    global newtomini
+    newtomini = False
+    clear_screen()
+    background.play()
+    wn.bgcolor("black")
+    tutorial_turtle = turtle.Turtle()
+    tutorial_turtle.hideturtle()
+    tutorial_turtle.color("white")
+    tutorial_turtle.penup()
+    tutorial_turtle.goto(0, 150)
+    tutorial_turtle.write("You have reached the Typing Mini Game", align="center", font=("Arial", 22, "bold"))
+    tutorial_turtle.goto(0, 100)
+    tutorial_turtle.write("There will be a prompt that you will write out in the text box.", align="center",
+                          font=("Arial", 16, "normal"))
+    tutorial_turtle.goto(0, 50)
+    tutorial_turtle.write('When you are done press "Enter".', align="center",
+                          font=("Arial", 16, "normal"))
+    tutorial_turtle.goto(0, 0)
+    tutorial_turtle.write("Tips:", align="center", font=("Arial", 16, "normal"))
+    tutorial_turtle.goto(0, -50)
+    tutorial_turtle.write("You are timed.", align="center", font=("Arial", 16, "normal"))
+    tutorial_turtle.goto(0, -100)
+    tutorial_turtle.write("Don't forget the period.", align="center", font=("Arial", 16, "normal"))
+    tutorial_turtle.goto(0, -150)
+    tutorial_turtle.write("Don't forget commas.", align="center", font=("Arial", 16, "normal"))
+    tutorial_turtle.goto(0, -200)
+    tutorial_turtle.write("You can move the Entry box if needed.", align="center", font=("Arial", 16, "normal"))
+    wn.update()
+    time.sleep(9)
+    trigger_minigame(player, score, sprites, slowdownscore)
+
+
 def game_loop(player, sprites, score, slowdownscore):
     global is_game_active
+    global newtomini
     minigame_sprite = sprites[-1]  # Assume the last sprite is the minigame trigger
     minigame_move_timer = time.time()  # To track when to move the minigame_sprite
 
@@ -288,9 +325,13 @@ def game_loop(player, sprites, score, slowdownscore):
                     end_game(score, sprites)
                 running = False
         # Check for collision with the minigame sprite
-        if player.distance(minigame_sprite) < 15 and is_game_active:  # Ensure game is still running
+        if player.distance(minigame_sprite) < 20 and is_game_active:  # Ensure game is still running
             minigame_sound.play()
-            trigger_minigame(player, score, sprites, slowdownscore)
+            if newtomini:
+                newtomini = False
+                tutorialmini(player, score, sprites, slowdownscore)
+            else:
+                trigger_minigame(player, score, sprites, slowdownscore)
         score += 0.01
 
 
@@ -332,7 +373,8 @@ def trigger_minigame(player, score, sprites, slowdownscore):
         minigame_turtle.goto(0, 190)
         minigame_turtle.write("Typing Mini-Game!", align="center", font=("Arial", 24, "bold"))
 
-        prompt = f"Generate a creative sentence about dodging that is roughly {int(score)} words long."
+        prompt = (f"Generate a sentence about dodging that is roughly {int(score)} words long. If the score is 0 then "
+                  f"make a 1 word long sentence.")
 
         try:
             prompt_parts = [{"text": prompt}]
@@ -343,7 +385,7 @@ def trigger_minigame(player, score, sprites, slowdownscore):
             challenge_sentenceshow = "dodge the hurdles swiftly!"  # Fallback sentence
             challenge_sentence = "dodge the hurdles swiftly!"
 
-        word_count = len(challenge_sentence.split()) * 2.4  # Count the words
+        word_count = len(challenge_sentence.split()) * 2.25  # Count the words
         minigame_turtle.goto(0, 50)
         wrapped_sentence = wrap_text(challenge_sentenceshow, 40)
         minigame_turtle.write(wrapped_sentence, align="center", font=("Arial", 12, "normal"))
@@ -351,21 +393,32 @@ def trigger_minigame(player, score, sprites, slowdownscore):
 
         start_time = time.time()  # Record the time at which input starts
         user_input = wn.textinput("Mini-Game",
-                                  f"Type the sentence exactly as shown above (Time: {word_count} seconds):").strip().lower()
+                                  f"Type the sentence exactly as shown above (Time: {int(word_count)} seconds):").strip().lower()
         elapsed_time = time.time() - start_time
 
         if user_input == challenge_sentence and elapsed_time <= word_count:
             minigame_turtle.goto(0, 20)
             score += 5
             slowdownscore += score / 50
-            number_of_sprites -= max(6, int(0.1 * number_of_sprites))
-            minigame_turtle.write(f"+5 Score. Only {number_of_sprites} asteroids remain. Good timing!", align="center",
+            number_of_sprites -= 5 + word_count - elapsed_time
+            number_of_spritesrounded = int(number_of_sprites)
+            minigame_turtle.write(f"+5 Score. Only {number_of_spritesrounded} asteroids remain. Good timing!", align="center",
+                                  font=("Arial", 18, "normal"))
+            minigame_turtle.goto(0, -1)
+            minigame_turtle.write(f"Took {elapsed_time:.2f} seconds.", align="center",
                                   font=("Arial", 18, "normal"))
             time.sleep(2)
         else:
             print(elapsed_time)
-            minigame_turtle.goto(0, 30)
-            minigame_turtle.write(f"Incorrect or too slow!", align="center", font=("Arial", 18, "normal"))
+            minigame_turtle.goto(0, 25)
+            if user_input != challenge_sentence:
+                minigame_turtle.write(f"Incorrect.", align="center", font=("Arial", 18, "normal"))
+            else:
+                minigame_turtle.write(f"Too slow.", align="center", font=("Arial", 18, "normal"))
+                minigame_turtle.goto(0, 12)
+                minigame_turtle.write(f"Took {elapsed_time:.2f} seconds and had {word_count} seconds.", align="center", font=("Arial", 18, "normal"))
+
+
             time.sleep(1)
 
         # Clean up mini-game elements
