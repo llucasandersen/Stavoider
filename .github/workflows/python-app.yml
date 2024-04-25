@@ -37,6 +37,7 @@ jobs:
     - name: Test with pytest
       run: |
         ls
+        mv main.py audios
         cd audios
         ls
         pytest main.py
