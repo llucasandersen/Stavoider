@@ -36,5 +36,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        git clone https://github.com/llucasandersen/Stavoider.git
+        cd Stavoider
         pytest main.py
