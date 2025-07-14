@@ -20,7 +20,13 @@ youwin_sound = pygame.mixer.Sound("audios/youwin.mp3")
 background = pygame.mixer.Sound("audios/backroundnoise.mp3")
 
 # Configuration for the Google Gemini AI API.
-genai.configure(api_key="AIzaSyCJTc3g3cFaS3Vr16xfiuHnXC6XzPdwnW0")
+# The API key can be supplied via the GEMINI_API_KEY environment variable.
+import os
+api_key = os.environ.get("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
+else:
+    genai.configure(api_key="")
 
 # Define the model generation configuration and safety settings.
 generation_config = {

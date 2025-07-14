@@ -5,6 +5,7 @@
 **Stavoider** is a fun and challenging asteroid avoidance game originally created for my AP Computer Science Portfolio. In this game, you control a spaceship and try to avoid incoming asteroids while collecting green asteroids to destroy other asteroids. The game also includes a typing mini-game to add an extra layer of excitement. 
 
 Developed by Lucas Andersen, this game combines elements of classic arcade action with modern gameplay mechanics.
+This repository includes an updated Pygame implementation that offers smoother graphics and sound.
 
 ## 🛠️ Features
 - 🚀 **Player Control:** Use the WASD or Arrow keys to navigate your spaceship.
@@ -16,12 +17,12 @@ Developed by Lucas Andersen, this game combines elements of classic arcade actio
 - 🏆 **Scoring System:** Tracks your score and displays it at the end of the game.
 
 ## 🎮 How to Play
-1. **Start the Game:** Run the script to open the main menu.
+1. **Start the Game:** Run `pygame_main.py` to open the main menu.
 2. **Main Menu:**
-   - Click "Play" or press "Enter" to start the game.
-   - Click "Exit" to close the game.
+   - Press **Enter** to start the game.
+   - Press **Esc** to close the game.
 3. **Tutorial:**
-   - Follow the on-screen instructions to learn how to play.
+   - A brief countdown plays before the action begins.
 4. **Game Controls:**
    - `W` or `Up Arrow`: Move Up
    - `A` or `Left Arrow`: Move Left
@@ -36,12 +37,16 @@ Developed by Lucas Andersen, this game combines elements of classic arcade actio
 1. Ensure you have Python installed on your system.
 2. Install the necessary modules:
    ```sh
-   pip install turtle pygame google-generativeai
+   pip install -r requirements.txt
    ```
-3. Place the game script and audio files in the same directory.
-4. Run the script to start the game:
+3. (Optional) Set the `GEMINI_API_KEY` environment variable if you wish to use the typing mini-game:
    ```sh
-   python stavoider.py
+   export GEMINI_API_KEY=your-key-here
+   ```
+4. Place the game script and audio files in the same directory.
+5. Run the game:
+   ```sh
+   python pygame_main.py
    ```
    
 ## 📚 About Me! (The Developer)
